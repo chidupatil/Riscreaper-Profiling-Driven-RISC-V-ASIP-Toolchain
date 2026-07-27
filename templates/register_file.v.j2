@@ -1,0 +1,87 @@
+// ============================================================
+// Module      : Register File
+// File        : register_file.v
+// Description : Specialized architectural register file.
+//               Only registers written by the current program
+//               are physically stored.
+//               x0 remains hardwired to 0.
+//
+// Registers read   : {{ registers_read }}
+// Registers written: {{ registers_written }}
+// Stored registers : {{ stored_registers }}
+// ============================================================
+
+`timescale 1ns / 1ps
+
+module register_file (
+    input             clk,
+    input             reg_write,
+    input      [4:0]  rs1,
+    input      [4:0]  rs2,
+    input      [4:0]  rd,
+    input      [31:0] write_data,
+    output     [31:0] read_data1,
+    output     [31:0] read_data2
+);
+
+{% for r in stored_registers %}
+    reg [31:0] r{{ r }};
+{% endfor %}
+
+    initial begin
+{% if stored_registers %}
+{% for r in stored_registers %}
+        r{{ r }} = 32'h00000000;
+{% endfor %}
+{% else %}
+        ;
+{% endif %}
+    end
+
+    // Synchronous write - x0 and unused registers ignored
+    always @(posedge clk) begin
+        if (reg_write) begin
+            case (rd)
+{% for r in stored_registers %}
+                5'd{{ r }}: r{{ r }} <= write_data;
+{% endfor %}
+                default: ;
+            endcase
+        end
+    end
+
+    reg [31:0] read_data1_r;
+    reg [31:0] read_data2_r;
+
+    always @(*) begin
+        case (rs1)
+            5'd0: read_data1_r = 32'h00000000;
+{% for r in stored_registers %}
+            5'd{{ r }}: read_data1_r = r{{ r }};
+{% endfor %}
+            default: read_data1_r = 32'h00000000;
+        endcase
+    end
+
+    always @(*) begin
+        case (rs2)
+            5'd0: read_data2_r = 32'h00000000;
+{% for r in stored_registers %}
+            5'd{{ r }}: read_data2_r = r{{ r }};
+{% endfor %}
+            default: read_data2_r = 32'h00000000;
+        endcase
+    end
+
+    // Asynchronous read with write-before-read forwarding
+    assign read_data1 =
+        (rs1 == 5'd0) ? 32'h00000000 :
+        (reg_write && rd == rs1 && rd != 5'd0) ? write_data :
+        read_data1_r;
+
+    assign read_data2 =
+        (rs2 == 5'd0) ? 32'h00000000 :
+        (reg_write && rd == rs2 && rd != 5'd0) ? write_data :
+        read_data2_r;
+
+endmodule

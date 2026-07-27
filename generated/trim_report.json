@@ -1,0 +1,36 @@
+{
+  "recommended_trim": {
+    "pc_width": 6,
+    "alu_width": 7,
+    "imm_width": 7,
+    "data_addr_width": 6,
+    "register_index_width": 4,
+    "custom_operand_width": 4,
+    "custom_result_width": 7
+  },
+  "applied_trim": {
+    "alu_width": 7,
+    "imm_width": 7,
+    "register_index_width": 4,
+    "per_register_data_width": {
+      "1": 7,
+      "2": 7,
+      "10": 7,
+      "14": 4,
+      "15": 7
+    }
+  },
+  "per_file_result": {
+    "alu.v": "// Trim applied: ALU result carries only 7 significant bits (sign-extended internally; a/b/result ports stay 32-bit; a/b themselves are never narrowed, so overflow's a[31]/b[31] stay valid)",
+    "imm_gen.v": "// Trim applied: immediate significant width = 7 bits (sign-extended internally; port stays 32-bit; U-type exempted)",
+    "register_file.v": "// Trim applied: register index ports narrowed to 4 bits (safe: unsigned address pruning); per-register storage narrowed independently (x1=7b, x2=7b, x10=7b, x14=4b, x15=7b); read/write ports stay 32-bit; visible registers=[1, 2, 10, 14, 15]"
+  },
+  "not_touched": [
+    "pipeline_top.v / tb_pipeline_top.v (not touched by design)",
+    "control_unit.v / alu_control.v / branch_unit.v (no width trimming needed/attempted)"
+  ],
+  "notes": [
+    "This pass ONLY patches alu.v, imm_gen.v, and register_file.v, matching the exact structure alu_v.j2 / imm_gen_v.j2 / register_file_v.j2 render. It deliberately does NOT touch pipeline_top.v, tb_pipeline_top.v, control_unit.v, alu_control.v, or branch_unit.v.",
+    "Register data width is now computed PER REGISTER (each named r-register is independent storage, not a shared bus), which is both safer and more aggressive than a single width shared across all registers."
+  ]
+}

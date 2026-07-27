@@ -1,0 +1,54 @@
+`timescale 1ns / 1ps
+
+module branch_unit (
+    input      [2:0] funct3,
+    input            branch,
+    input            zero,
+    input            negative,
+    input            overflow,
+    input            carry_out,
+    output reg       branch_taken
+);
+
+    always @(*) begin
+        if (!branch) begin
+            branch_taken = 1'b0;
+        end else begin
+            case (funct3)
+
+{% if "beq" in instructions %}
+                3'b000: branch_taken = zero;
+{% endif %}
+
+{% if "bne" in instructions %}
+                3'b001: branch_taken = ~zero;
+{% endif %}
+
+{% if "blt" in instructions %}
+                3'b100: branch_taken = (negative ^ overflow);
+{% endif %}
+
+{% if "bge" in instructions %}
+                3'b101: branch_taken = ~(negative ^ overflow);
+{% endif %}
+
+{# BUG FIX (proven with simulation): carry_out = sub_result[32] from alu.v's
+   {1'b0,a}-{1'b0,b} is 1 when a borrow occurred, i.e. when a < b
+   (unsigned) -- confirmed: a=3,b=5 (a<b) gives carry_out=1; a=5,b=3
+   (a>=b) gives carry_out=0. The previous version had this backwards
+   (~carry_out for bltu, carry_out for bgeu), which inverted every BLTU/
+   BGEU decision. #}
+{% if "bltu" in instructions %}
+                3'b110: branch_taken = carry_out;
+{% endif %}
+
+{% if "bgeu" in instructions %}
+                3'b111: branch_taken = ~carry_out;
+{% endif %}
+
+                default: branch_taken = 1'b0;
+            endcase
+        end
+    end
+
+endmodule

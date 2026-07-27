@@ -1,0 +1,23 @@
+`ifndef CONFIG_PKG_VH
+`define CONFIG_PKG_VH
+
+`define HAS_IMM_I      {{ 1 if features.has_imm_i else 0 }}
+`define HAS_IMM_S      {{ 1 if features.has_imm_s else 0 }}
+`define HAS_IMM_B      {{ 1 if features.has_imm_b else 0 }}
+`define HAS_IMM_J      {{ 1 if features.has_imm_j else 0 }}
+
+`define HAS_REGWRITE   {{ 1 if features.has_regwrite else 0 }}
+`define HAS_MEMREAD    {{ 1 if features.has_memread else 0 }}
+`define HAS_MEMWRITE   {{ 1 if features.has_memwrite else 0 }}
+`define HAS_BRANCH     {{ 1 if features.has_branch else 0 }}
+`define HAS_JUMP       {{ 1 if features.has_jump else 0 }}
+`define HAS_CUSTOM     {{ 1 if features.has_custom else 0 }}
+
+`define ALU_HAS_ADD    {{ 1 if alu_ops.ADD else 0 }}
+`define ALU_HAS_SUB    {{ 1 if alu_ops.SUB else 0 }}
+`define ALU_HAS_AND    {{ 1 if alu_ops.AND else 0 }}
+`define ALU_HAS_OR     {{ 1 if alu_ops.OR else 0 }}
+`define ALU_HAS_XOR    {{ 1 if alu_ops.XOR else 0 }}
+`define ALU_HAS_SLT    {{ 1 if alu_ops.SLT else 0 }}
+
+`endif

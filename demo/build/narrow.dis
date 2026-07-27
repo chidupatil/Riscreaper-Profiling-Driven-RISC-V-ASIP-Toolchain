@@ -1,0 +1,38 @@
+
+demo/build/narrow.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010094 <main>:
+   10094:	fe010113          	addi	x2,x2,-32
+   10098:	00112e23          	sw	x1,28(x2)
+   1009c:	00812c23          	sw	x8,24(x2)
+   100a0:	02010413          	addi	x8,x2,32
+   100a4:	fe0407a3          	sb	x0,-17(x8)
+   100a8:	fe040723          	sb	x0,-18(x8)
+   100ac:	fe040723          	sb	x0,-18(x8)
+   100b0:	0280006f          	jal	x0,100d8 <main+0x44>
+   100b4:	fef44703          	lbu	x14,-17(x8)
+   100b8:	fee44783          	lbu	x15,-18(x8)
+   100bc:	00f707b3          	add	x15,x14,x15
+   100c0:	0ff7f793          	andi	x15,x15,255
+   100c4:	fef407a3          	sb	x15,-17(x8)
+   100c8:	fee44783          	lbu	x15,-18(x8)
+   100cc:	00178793          	addi	x15,x15,1
+   100d0:	0ff7f793          	andi	x15,x15,255
+   100d4:	fef40723          	sb	x15,-18(x8)
+   100d8:	fee44783          	lbu	x15,-18(x8)
+   100dc:	01879793          	slli	x15,x15,0x18
+   100e0:	4187d793          	srai	x15,x15,0x18
+   100e4:	fc07d8e3          	bge	x15,x0,100b4 <main+0x20>
+   100e8:	fef44783          	lbu	x15,-17(x8)
+   100ec:	00079663          	bne	x15,x0,100f8 <main+0x64>
+   100f0:	00100793          	addi	x15,x0,1
+   100f4:	0080006f          	jal	x0,100fc <main+0x68>
+   100f8:	00000793          	addi	x15,x0,0
+   100fc:	00078513          	addi	x10,x15,0
+   10100:	01c12083          	lw	x1,28(x2)
+   10104:	01812403          	lw	x8,24(x2)
+   10108:	02010113          	addi	x2,x2,32
+   1010c:	00008067          	jalr	x0,0(x1)

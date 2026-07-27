@@ -1,0 +1,33 @@
+
+demo/build/demo.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010094 <main>:
+   10094:	fe010113          	addi	x2,x2,-32
+   10098:	00112e23          	sw	x1,28(x2)
+   1009c:	00812c23          	sw	x8,24(x2)
+   100a0:	02010413          	addi	x8,x2,32
+   100a4:	00300793          	addi	x15,x0,3
+   100a8:	fef42423          	sw	x15,-24(x8)
+   100ac:	00400793          	addi	x15,x0,4
+   100b0:	fef42223          	sw	x15,-28(x8)
+   100b4:	fe842703          	lw	x14,-24(x8)
+   100b8:	fe442783          	lw	x15,-28(x8)
+   100bc:	00f75c63          	bge	x14,x15,100d4 <main+0x40>
+   100c0:	fe842703          	lw	x14,-24(x8)
+   100c4:	fe442783          	lw	x15,-28(x8)
+   100c8:	00f707b3          	add	x15,x14,x15
+   100cc:	fef42623          	sw	x15,-20(x8)
+   100d0:	0140006f          	jal	x0,100e4 <main+0x50>
+   100d4:	fe842703          	lw	x14,-24(x8)
+   100d8:	fe442783          	lw	x15,-28(x8)
+   100dc:	40f707b3          	sub	x15,x14,x15
+   100e0:	fef42623          	sw	x15,-20(x8)
+   100e4:	fec42783          	lw	x15,-20(x8)
+   100e8:	00078513          	addi	x10,x15,0
+   100ec:	01c12083          	lw	x1,28(x2)
+   100f0:	01812403          	lw	x8,24(x2)
+   100f4:	02010113          	addi	x2,x2,32
+   100f8:	00008067          	jalr	x0,0(x1)

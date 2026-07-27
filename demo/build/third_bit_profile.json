@@ -1,0 +1,269 @@
+{
+  "steps": 40,
+  "halted_reason": "pc_not_mapped",
+  "instructions_executed": {
+    "addi": 15,
+    "jal": 2,
+    "sw": 8,
+    "lw": 8,
+    "slli": 2,
+    "add": 3,
+    "jalr": 2
+  },
+  "instructions_used": [
+    "add",
+    "addi",
+    "jal",
+    "jalr",
+    "lw",
+    "slli",
+    "sw"
+  ],
+  "unused_instructions": [
+    "and",
+    "andi",
+    "auipc",
+    "beq",
+    "bge",
+    "bgeu",
+    "blt",
+    "bltu",
+    "bne",
+    "custom_mac",
+    "custom_mul",
+    "custom_mulh",
+    "custom_mulhu",
+    "custom_reserved",
+    "lb",
+    "lbu",
+    "lh",
+    "lhu",
+    "lui",
+    "or",
+    "ori",
+    "sb",
+    "sh",
+    "sll",
+    "slt",
+    "slti",
+    "sltiu",
+    "sltu",
+    "sra",
+    "srai",
+    "srl",
+    "srli",
+    "sub",
+    "xor",
+    "xori"
+  ],
+  "executed_pc_count": 40,
+  "pc_bits_used": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "pc_required_width": 8,
+  "registers_used": [
+    1,
+    2,
+    8,
+    10,
+    11,
+    14,
+    15
+  ],
+  "registers_read": [
+    1,
+    2,
+    8,
+    10,
+    11,
+    14,
+    15
+  ],
+  "registers_written": [
+    1,
+    2,
+    8,
+    10,
+    11,
+    14,
+    15
+  ],
+  "register_index_required_width": 4,
+  "register_read_bits_used": {
+    "x1": [
+      3,
+      5,
+      7
+    ],
+    "x2": [
+      3,
+      4,
+      6
+    ],
+    "x8": [
+      3,
+      4,
+      6
+    ],
+    "x10": [
+      0,
+      2,
+      3
+    ],
+    "x11": [
+      1
+    ],
+    "x14": [
+      0,
+      1
+    ],
+    "x15": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "register_write_bits_used": {
+    "x1": [
+      3,
+      5,
+      7
+    ],
+    "x2": [
+      3,
+      4,
+      6
+    ],
+    "x8": [
+      3,
+      4,
+      6
+    ],
+    "x10": [
+      0,
+      2,
+      3
+    ],
+    "x11": [
+      1
+    ],
+    "x14": [
+      0,
+      1
+    ],
+    "x15": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "register_write_required_width": {
+    "x1": 9,
+    "x2": 8,
+    "x8": 8,
+    "x10": 5,
+    "x11": 3,
+    "x14": 3,
+    "x15": 5
+  },
+  "alu_result_bits_used": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "alu_required_width": 9,
+  "alu_signed_range": [
+    1,
+    160
+  ],
+  "alu_toggled_bits": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "memory_address_bits_used": [
+    2,
+    4,
+    5,
+    6
+  ],
+  "memory_address_width": 7,
+  "memory_min_addr": 32,
+  "memory_max_addr": 84,
+  "memory_read_bits_used": [
+    0,
+    1,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "memory_write_bits_used": [
+    0,
+    1,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "immediate_widths_by_kind": {
+    "imm_i": {
+      "min_seen": -48,
+      "max_seen": 160,
+      "required_bits": 9
+    },
+    "imm_s": {
+      "min_seen": -40,
+      "max_seen": 44,
+      "required_bits": 7
+    },
+    "jump": {
+      "min_seen": -120,
+      "max_seen": 100,
+      "required_bits": 8
+    }
+  },
+  "immediate_u_type_required_width": 1,
+  "shamt_required_width": 2,
+  "max_unsigned_value_seen": 160,
+  "min_signed_value_seen": 0,
+  "max_signed_value_seen": 160,
+  "custom_decode_map": {
+    "funct3_000": "custom_mul",
+    "funct3_001": "custom_mulh",
+    "funct3_010": "custom_mulhu",
+    "funct3_011": "custom_mac"
+  },
+  "custom_operand_required_width": 32,
+  "custom_operand_signed_range": null,
+  "custom_result_required_width": 32,
+  "custom_result_signed_range": null,
+  "recommended_trim": {
+    "pc_width": 8,
+    "alu_width": 9,
+    "imm_width": 9,
+    "data_addr_width": 7,
+    "register_index_width": 4,
+    "custom_operand_width": 32,
+    "custom_result_width": 32
+  }
+}

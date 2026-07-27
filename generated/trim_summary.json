@@ -1,0 +1,454 @@
+{
+  "program_counter": {
+    "baseline_width_bits": 32,
+    "trimmed_width_bits": 7,
+    "bits_saved": 25,
+    "percent_saved": 78.1,
+    "note": "Applies to pc.v, pc_adder.v, instruction_memory.v's pc port, AND pipeline_top.v's primary pc_out/pc_plus4_if/pc_next wires -- all generated at this same width together, since narrowing them inconsistently previously caused a proven wraparound bug."
+  },
+  "instruction_memory": {
+    "baseline_depth_words": 128,
+    "trimmed_depth_words": 15,
+    "words_saved": 113,
+    "percent_saved": 88.3,
+    "note": "Includes the prepended startup stub (sp/ra init) in the word count -- this is the real, final program size."
+  },
+  "data_memory": {
+    "baseline_depth_words": 64,
+    "trimmed_depth_words": 11,
+    "words_saved": 53,
+    "percent_saved": 82.8,
+    "stack_top_bytes": 44,
+    "note": "Depth only -- per-word width is NOT trimmed (kept at 32 bits) because sub-word (byte/halfword) addressing needs full word structure at every location, and this memory is used heterogeneously (full-width saved registers alongside byte-sized locals in the same array). See gen_data_memory.py."
+  },
+  "alu": {
+    "port_width_bits": 32,
+    "port_width_note": "Ports (a, b, result) are deliberately kept at 32 bits always -- narrowing them directly caused proven data corruption earlier in this project. All savings below are from internal logic only.",
+    "internal_significant_bits": 7,
+    "internal_bits_saved": 25,
+    "internal_percent_saved": 78.1,
+    "alu_control_width_baseline_bits": 4,
+    "alu_control_width_trimmed_bits": 1,
+    "alu_control_bits_saved": 3,
+    "alu_control_codes": {
+      "ADD": 0
+    }
+  },
+  "immediate": {
+    "port_width_bits": 32,
+    "port_width_note": "imm_out port kept at 32 bits always, same reasoning as the ALU.",
+    "internal_significant_bits": 7,
+    "internal_bits_saved": 25,
+    "internal_percent_saved": 78.1
+  },
+  "register_file": {
+    "architectural_registers": 32,
+    "physically_stored_registers": 5,
+    "stored_register_list": [
+      "x1",
+      "x2",
+      "x10",
+      "x14",
+      "x15"
+    ],
+    "registers_never_stored": 27,
+    "register_index_width_baseline_bits": 5,
+    "register_index_width_trimmed_bits": 4,
+    "register_index_bits_saved": 1,
+    "per_register_data_width_bits": {
+      "x1": 7,
+      "x2": 7,
+      "x10": 7,
+      "x14": 4,
+      "x15": 7
+    },
+    "note": "Registers not in stored_register_list have NO physical storage at all -- not narrowed, entirely absent. Each stored register's own data width is independent (per_register_data_width_bits), since register_file_v.j2 gives each one its own named signal rather than a shared array."
+  },
+  "control_signal_encoding": {
+    "alu_op_width_baseline_bits": 2,
+    "alu_op_width_trimmed_bits": 1,
+    "mem_to_reg_width_baseline_bits": 2,
+    "mem_to_reg_width_trimmed_bits": 2,
+    "mem_to_reg_write_back_mux_eliminated": false,
+    "mem_to_reg_codes": {
+      "alu": 0,
+      "mem": 1,
+      "pcplus4": 2
+    },
+    "alu_op_codes": {
+      "addfam": 0,
+      "ialu": 1
+    },
+    "note": "Dense encoding mode active."
+  },
+  "instructions": {
+    "total_supported": 42,
+    "used_count": 6,
+    "used_instructions": [
+      "addi",
+      "custom_mul",
+      "jal",
+      "jalr",
+      "lw",
+      "sw"
+    ],
+    "excluded_count": 36,
+    "excluded_instructions": [
+      "add",
+      "and",
+      "andi",
+      "auipc",
+      "beq",
+      "bge",
+      "bgeu",
+      "blt",
+      "bltu",
+      "bne",
+      "custom_mac",
+      "custom_mulh",
+      "custom_mulhu",
+      "custom_reserved",
+      "lb",
+      "lbu",
+      "lh",
+      "lhu",
+      "lui",
+      "or",
+      "ori",
+      "sb",
+      "sh",
+      "sll",
+      "slli",
+      "slt",
+      "slti",
+      "sltiu",
+      "sltu",
+      "sra",
+      "srai",
+      "srl",
+      "srli",
+      "sub",
+      "xor",
+      "xori"
+    ],
+    "percent_excluded": 85.7,
+    "note": "control_unit.v, alu_control.v, and branch_unit.v only ever contain case arms for used_instructions -- excluded ones have no corresponding logic at all, not disabled logic."
+  },
+  "custom_unit": {
+    "any_custom_instruction_used": true,
+    "instantiated_in_pipeline_top": true,
+    "note": "This program uses a custom instruction, so custom_unit is instantiated normally."
+  },
+  "branch_unit": {
+    "any_branch_instruction_used": false,
+    "instantiated_in_pipeline_top": false,
+    "note": "Same pattern as custom_unit: branch_unit.v's output is gated by the branch control signal, which is never asserted if no branch instruction exists at all, so it's only instantiated when actually needed."
+  },
+  "hazard_unit": {
+    "load_use_stall_possible": true,
+    "flush_possible": true,
+    "instantiated_in_pipeline_top": true,
+    "note": "Only instantiated if either condition above is true -- both stem from independent conditions in hazard_unit's own logic that otherwise always evaluate to their inert defaults."
+  },
+  "pipeline_registers": {
+    "if_id_reg": {
+      "baseline_total_bits": 96,
+      "trimmed_total_bits": 46,
+      "bits_saved": 50,
+      "percent_saved": 52.1,
+      "fields": [
+        {
+          "field": "pc",
+          "baseline_bits": 32,
+          "trimmed_bits": 7,
+          "narrowed": true
+        },
+        {
+          "field": "pc_plus4",
+          "baseline_bits": 32,
+          "trimmed_bits": 7,
+          "narrowed": true
+        },
+        {
+          "field": "instruction",
+          "baseline_bits": 32,
+          "trimmed_bits": 32,
+          "narrowed": false
+        }
+      ]
+    },
+    "id_ex_reg": {
+      "baseline_total_bits": 221,
+      "trimmed_total_bits": 142,
+      "bits_saved": 79,
+      "percent_saved": 35.7,
+      "fields": [
+        {
+          "field": "pc",
+          "baseline_bits": 32,
+          "trimmed_bits": 7,
+          "narrowed": true
+        },
+        {
+          "field": "pc_plus4",
+          "baseline_bits": 32,
+          "trimmed_bits": 7,
+          "narrowed": true
+        },
+        {
+          "field": "read_data1",
+          "baseline_bits": 32,
+          "trimmed_bits": 32,
+          "narrowed": false
+        },
+        {
+          "field": "read_data2",
+          "baseline_bits": 32,
+          "trimmed_bits": 32,
+          "narrowed": false
+        },
+        {
+          "field": "imm",
+          "baseline_bits": 32,
+          "trimmed_bits": 7,
+          "narrowed": true
+        },
+        {
+          "field": "instruction",
+          "baseline_bits": 32,
+          "trimmed_bits": 32,
+          "narrowed": false
+        },
+        {
+          "field": "rs1",
+          "baseline_bits": 5,
+          "trimmed_bits": 4,
+          "narrowed": true
+        },
+        {
+          "field": "rs2",
+          "baseline_bits": 5,
+          "trimmed_bits": 4,
+          "narrowed": true
+        },
+        {
+          "field": "rd",
+          "baseline_bits": 5,
+          "trimmed_bits": 4,
+          "narrowed": true
+        },
+        {
+          "field": "alu_op",
+          "baseline_bits": 2,
+          "trimmed_bits": 1,
+          "narrowed": true
+        },
+        {
+          "field": "alu_src",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "mem_read",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "mem_write",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "funct3",
+          "baseline_bits": 3,
+          "trimmed_bits": 3,
+          "narrowed": false
+        },
+        {
+          "field": "reg_write",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "mem_to_reg",
+          "baseline_bits": 2,
+          "trimmed_bits": 2,
+          "narrowed": false
+        },
+        {
+          "field": "branch",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "jump",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "jalr",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        }
+      ]
+    },
+    "ex_mem_reg": {
+      "baseline_total_bits": 144,
+      "trimmed_total_bits": 93,
+      "bits_saved": 51,
+      "percent_saved": 35.4,
+      "fields": [
+        {
+          "field": "pc_plus4",
+          "baseline_bits": 32,
+          "trimmed_bits": 7,
+          "narrowed": true
+        },
+        {
+          "field": "alu_result",
+          "baseline_bits": 32,
+          "trimmed_bits": 32,
+          "narrowed": false
+        },
+        {
+          "field": "write_data",
+          "baseline_bits": 32,
+          "trimmed_bits": 32,
+          "narrowed": false
+        },
+        {
+          "field": "branch_target",
+          "baseline_bits": 32,
+          "trimmed_bits": 7,
+          "narrowed": true
+        },
+        {
+          "field": "zero",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "branch_taken",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "rd",
+          "baseline_bits": 5,
+          "trimmed_bits": 4,
+          "narrowed": true
+        },
+        {
+          "field": "mem_read",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "mem_write",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "funct3",
+          "baseline_bits": 3,
+          "trimmed_bits": 3,
+          "narrowed": false
+        },
+        {
+          "field": "reg_write",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "mem_to_reg",
+          "baseline_bits": 2,
+          "trimmed_bits": 2,
+          "narrowed": false
+        },
+        {
+          "field": "jump",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        }
+      ]
+    },
+    "mem_wb_reg": {
+      "baseline_total_bits": 104,
+      "trimmed_total_bits": 78,
+      "bits_saved": 26,
+      "percent_saved": 25.0,
+      "fields": [
+        {
+          "field": "pc_plus4",
+          "baseline_bits": 32,
+          "trimmed_bits": 7,
+          "narrowed": true
+        },
+        {
+          "field": "alu_result",
+          "baseline_bits": 32,
+          "trimmed_bits": 32,
+          "narrowed": false
+        },
+        {
+          "field": "mem_read_data",
+          "baseline_bits": 32,
+          "trimmed_bits": 32,
+          "narrowed": false
+        },
+        {
+          "field": "rd",
+          "baseline_bits": 5,
+          "trimmed_bits": 4,
+          "narrowed": true
+        },
+        {
+          "field": "reg_write",
+          "baseline_bits": 1,
+          "trimmed_bits": 1,
+          "narrowed": false
+        },
+        {
+          "field": "mem_to_reg",
+          "baseline_bits": 2,
+          "trimmed_bits": 2,
+          "narrowed": false
+        }
+      ]
+    }
+  },
+  "forwarding_and_hazard_units": {
+    "register_index_port_width_bits": 4,
+    "baseline_register_index_port_width_bits": 5,
+    "ports_at_this_width": {
+      "forwarding_unit": [
+        "id_ex_rs1",
+        "id_ex_rs2",
+        "ex_mem_rd",
+        "mem_wb_rd"
+      ],
+      "hazard_unit": [
+        "id_ex_rd",
+        "if_id_rs1",
+        "if_id_rs2"
+      ]
+    },
+    "note": "forwarding_unit.v and hazard_unit.v's rs1/rs2/rd ports (listed above) are generated at the real register_index_width, not a fixed 5 bits."
+  },
+  "halt_detection": {
+    "primary_pc_path_note": "pc.v, pc_adder.v, instruction_memory.v, and pipeline_top.v's primary fetch wires stay full-precision AT the trimmed pc_width (not narrowed-after-the-fact) -- see program_counter section above."
+  }
+}

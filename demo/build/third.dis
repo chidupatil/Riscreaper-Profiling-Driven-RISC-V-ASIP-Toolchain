@@ -1,0 +1,46 @@
+
+demo/build/third.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <mix_and_sum>:
+   0:	fd010113          	addi	x2,x2,-48
+   4:	02112623          	sw	x1,44(x2)
+   8:	02812423          	sw	x8,40(x2)
+   c:	03010413          	addi	x8,x2,48
+  10:	fca42e23          	sw	x10,-36(x8)
+  14:	fcb42c23          	sw	x11,-40(x8)
+  18:	fdc42703          	lw	x14,-36(x8)
+  1c:	00070793          	addi	x15,x14,0
+  20:	00179793          	slli	x15,x15,0x1
+  24:	00e787b3          	add	x15,x15,x14
+  28:	fef42623          	sw	x15,-20(x8)
+  2c:	fd842703          	lw	x14,-40(x8)
+  30:	00070793          	addi	x15,x14,0
+  34:	00279793          	slli	x15,x15,0x2
+  38:	00e787b3          	add	x15,x15,x14
+  3c:	fef42423          	sw	x15,-24(x8)
+  40:	fec42703          	lw	x14,-20(x8)
+  44:	fe842783          	lw	x15,-24(x8)
+  48:	00f707b3          	add	x15,x14,x15
+  4c:	00078513          	addi	x10,x15,0
+  50:	02c12083          	lw	x1,44(x2)
+  54:	02812403          	lw	x8,40(x2)
+  58:	03010113          	addi	x2,x2,48
+  5c:	00008067          	jalr	x0,0(x1)
+
+00000060 <main>:
+  60:	ff010113          	addi	x2,x2,-16
+  64:	00112623          	sw	x1,12(x2)
+  68:	00812423          	sw	x8,8(x2)
+  6c:	01010413          	addi	x8,x2,16
+  70:	00200593          	addi	x11,x0,2
+  74:	00100513          	addi	x10,x0,1
+  78:	f89ff0ef          	jal	x1,0 <mix_and_sum>
+  7c:	00050793          	addi	x15,x10,0
+  80:	00078513          	addi	x10,x15,0
+  84:	00c12083          	lw	x1,12(x2)
+  88:	00812403          	lw	x8,8(x2)
+  8c:	01010113          	addi	x2,x2,16
+  90:	00008067          	jalr	x0,0(x1)

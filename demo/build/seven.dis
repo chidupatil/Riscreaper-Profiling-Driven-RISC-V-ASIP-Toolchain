@@ -1,0 +1,19 @@
+
+demo/build/seven.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <main>:
+   0:	ff010113          	addi	x2,x2,-16
+   4:	00600793          	addi	x15,x0,6
+   8:	00f12223          	sw	x15,4(x2)
+   c:	00700793          	addi	x15,x0,7
+  10:	00f12423          	sw	x15,8(x2)
+  14:	00412783          	lw	x15,4(x2)
+  18:	00812703          	lw	x14,8(x2)
+  1c:	00e7878b          	.insn	4, 0x00e7878b
+  20:	00f12623          	sw	x15,12(x2)
+  24:	00c12503          	lw	x10,12(x2)
+  28:	01010113          	addi	x2,x2,16
+  2c:	00008067          	jalr	x0,0(x1)

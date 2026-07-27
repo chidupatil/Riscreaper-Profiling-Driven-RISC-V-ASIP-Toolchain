@@ -1,0 +1,39 @@
+
+demo/build/six.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <main>:
+   0:	fe010113          	addi	x2,x2,-32
+   4:	00112e23          	sw	x1,28(x2)
+   8:	00812c23          	sw	x8,24(x2)
+   c:	02010413          	addi	x8,x2,32
+  10:	00600793          	addi	x15,x0,6
+  14:	fef42623          	sw	x15,-20(x8)
+  18:	00700793          	addi	x15,x0,7
+  1c:	fef42423          	sw	x15,-24(x8)
+  20:	fec42783          	lw	x15,-20(x8)
+  24:	fe842703          	lw	x14,-24(x8)
+  28:	00070593          	addi	x11,x14,0
+  2c:	00078513          	addi	x10,x15,0
+  30:	024000ef          	jal	x1,54 <__mulsi3>
+  34:	00050793          	addi	x15,x10,0
+  38:	fef42223          	sw	x15,-28(x8)
+  3c:	fe442783          	lw	x15,-28(x8)
+  40:	00078513          	addi	x10,x15,0
+  44:	01c12083          	lw	x1,28(x2)
+  48:	01812403          	lw	x8,24(x2)
+  4c:	02010113          	addi	x2,x2,32
+  50:	00008067          	jalr	x0,0(x1)
+
+00000054 <__mulsi3>:
+  54:	00050613          	addi	x12,x10,0
+  58:	00000513          	addi	x10,x0,0
+  5c:	0015f693          	andi	x13,x11,1
+  60:	00068463          	beq	x13,x0,68 <__mulsi3+0x14>
+  64:	00c50533          	add	x10,x10,x12
+  68:	0015d593          	srli	x11,x11,0x1
+  6c:	00161613          	slli	x12,x12,0x1
+  70:	fe0596e3          	bne	x11,x0,5c <__mulsi3+0x8>
+  74:	00008067          	jalr	x0,0(x1)

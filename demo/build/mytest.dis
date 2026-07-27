@@ -1,0 +1,110 @@
+
+demo/build/mytest.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <main>:
+   0:	fd010113          	addi	x2,x2,-48
+   4:	02112623          	sw	x1,44(x2)
+   8:	02812423          	sw	x8,40(x2)
+   c:	03010413          	addi	x8,x2,48
+  10:	01100793          	addi	x15,x0,17
+  14:	fef42623          	sw	x15,-20(x8)
+  18:	00500793          	addi	x15,x0,5
+  1c:	fef42423          	sw	x15,-24(x8)
+  20:	fec42783          	lw	x15,-20(x8)
+  24:	fe842703          	lw	x14,-24(x8)
+  28:	00070593          	addi	x11,x14,0
+  2c:	00078513          	addi	x10,x15,0
+  30:	06c000ef          	jal	x1,9c <__mulsi3>
+  34:	00050793          	addi	x15,x10,0
+  38:	fef42223          	sw	x15,-28(x8)
+  3c:	fe442783          	lw	x15,-28(x8)
+  40:	fe842703          	lw	x14,-24(x8)
+  44:	00070593          	addi	x11,x14,0
+  48:	00078513          	addi	x10,x15,0
+  4c:	074000ef          	jal	x1,c0 <__divsi3>
+  50:	00050793          	addi	x15,x10,0
+  54:	fef42023          	sw	x15,-32(x8)
+  58:	fec42783          	lw	x15,-20(x8)
+  5c:	fe842703          	lw	x14,-24(x8)
+  60:	00070593          	addi	x11,x14,0
+  64:	00078513          	addi	x10,x15,0
+  68:	0dc000ef          	jal	x1,144 <__modsi3>
+  6c:	00050793          	addi	x15,x10,0
+  70:	fcf42e23          	sw	x15,-36(x8)
+  74:	fe042703          	lw	x14,-32(x8)
+  78:	fdc42783          	lw	x15,-36(x8)
+  7c:	00f707b3          	add	x15,x14,x15
+  80:	fcf42c23          	sw	x15,-40(x8)
+  84:	fd842783          	lw	x15,-40(x8)
+  88:	00078513          	addi	x10,x15,0
+  8c:	02c12083          	lw	x1,44(x2)
+  90:	02812403          	lw	x8,40(x2)
+  94:	03010113          	addi	x2,x2,48
+  98:	00008067          	jalr	x0,0(x1)
+
+0000009c <__mulsi3>:
+  9c:	00050613          	addi	x12,x10,0
+  a0:	00000513          	addi	x10,x0,0
+  a4:	0015f693          	andi	x13,x11,1
+  a8:	00068463          	beq	x13,x0,b0 <__mulsi3+0x14>
+  ac:	00c50533          	add	x10,x10,x12
+  b0:	0015d593          	srli	x11,x11,0x1
+  b4:	00161613          	slli	x12,x12,0x1
+  b8:	fe0596e3          	bne	x11,x0,a4 <__mulsi3+0x8>
+  bc:	00008067          	jalr	x0,0(x1)
+
+000000c0 <__divsi3>:
+  c0:	06054063          	blt	x10,x0,120 <__umodsi3+0x10>
+  c4:	0605c663          	blt	x11,x0,130 <__umodsi3+0x20>
+
+000000c8 <__hidden___udivsi3>:
+  c8:	00058613          	addi	x12,x11,0
+  cc:	00050593          	addi	x11,x10,0
+  d0:	fff00513          	addi	x10,x0,-1
+  d4:	02060c63          	beq	x12,x0,10c <__hidden___udivsi3+0x44>
+  d8:	00100693          	addi	x13,x0,1
+  dc:	00b67a63          	bgeu	x12,x11,f0 <__hidden___udivsi3+0x28>
+  e0:	00c05863          	bge	x0,x12,f0 <__hidden___udivsi3+0x28>
+  e4:	00161613          	slli	x12,x12,0x1
+  e8:	00169693          	slli	x13,x13,0x1
+  ec:	feb66ae3          	bltu	x12,x11,e0 <__hidden___udivsi3+0x18>
+  f0:	00000513          	addi	x10,x0,0
+  f4:	00c5e663          	bltu	x11,x12,100 <__hidden___udivsi3+0x38>
+  f8:	40c585b3          	sub	x11,x11,x12
+  fc:	00d56533          	or	x10,x10,x13
+ 100:	0016d693          	srli	x13,x13,0x1
+ 104:	00165613          	srli	x12,x12,0x1
+ 108:	fe0696e3          	bne	x13,x0,f4 <__hidden___udivsi3+0x2c>
+ 10c:	00008067          	jalr	x0,0(x1)
+
+00000110 <__umodsi3>:
+ 110:	00008293          	addi	x5,x1,0
+ 114:	fb5ff0ef          	jal	x1,c8 <__hidden___udivsi3>
+ 118:	00058513          	addi	x10,x11,0
+ 11c:	00028067          	jalr	x0,0(x5)
+ 120:	40a00533          	sub	x10,x0,x10
+ 124:	00b04863          	blt	x0,x11,134 <__umodsi3+0x24>
+ 128:	40b005b3          	sub	x11,x0,x11
+ 12c:	f9dff06f          	jal	x0,c8 <__hidden___udivsi3>
+ 130:	40b005b3          	sub	x11,x0,x11
+ 134:	00008293          	addi	x5,x1,0
+ 138:	f91ff0ef          	jal	x1,c8 <__hidden___udivsi3>
+ 13c:	40a00533          	sub	x10,x0,x10
+ 140:	00028067          	jalr	x0,0(x5)
+
+00000144 <__modsi3>:
+ 144:	00008293          	addi	x5,x1,0
+ 148:	0005ca63          	blt	x11,x0,15c <__modsi3+0x18>
+ 14c:	00054c63          	blt	x10,x0,164 <__modsi3+0x20>
+ 150:	f79ff0ef          	jal	x1,c8 <__hidden___udivsi3>
+ 154:	00058513          	addi	x10,x11,0
+ 158:	00028067          	jalr	x0,0(x5)
+ 15c:	40b005b3          	sub	x11,x0,x11
+ 160:	fe0558e3          	bge	x10,x0,150 <__modsi3+0xc>
+ 164:	40a00533          	sub	x10,x0,x10
+ 168:	f61ff0ef          	jal	x1,c8 <__hidden___udivsi3>
+ 16c:	40b00533          	sub	x10,x0,x11
+ 170:	00028067          	jalr	x0,0(x5)

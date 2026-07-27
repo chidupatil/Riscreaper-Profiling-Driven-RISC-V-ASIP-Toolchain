@@ -1,0 +1,25 @@
+{
+  "instructions_used": [
+    "addi",
+    "jal",
+    "jalr"
+  ],
+  "registers_read": [
+    1
+  ],
+  "registers_written": [
+    1,
+    2,
+    10
+  ],
+  "recommended_trim": {
+    "pc_width": 5,
+    "alu_width": 10,
+    "imm_width": 10,
+    "data_addr_width": 1,
+    "register_index_width": 4,
+    "custom_operand_width": 32
+  },
+  "halted_reason": "pc_not_mapped",
+  "steps": 5
+}

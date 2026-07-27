@@ -1,0 +1,38 @@
+
+demo/build/small_narrow.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <main>:
+   0:	fe010113          	addi	x2,x2,-32
+   4:	00112e23          	sw	x1,28(x2)
+   8:	00812c23          	sw	x8,24(x2)
+   c:	02010413          	addi	x8,x2,32
+  10:	fe0407a3          	sb	x0,-17(x8)
+  14:	fe040723          	sb	x0,-18(x8)
+  18:	fe040723          	sb	x0,-18(x8)
+  1c:	0280006f          	jal	x0,44 <main+0x44>
+  20:	fef44703          	lbu	x14,-17(x8)
+  24:	fee44783          	lbu	x15,-18(x8)
+  28:	00f707b3          	add	x15,x14,x15
+  2c:	0ff7f793          	andi	x15,x15,255
+  30:	fef407a3          	sb	x15,-17(x8)
+  34:	fee44783          	lbu	x15,-18(x8)
+  38:	00178793          	addi	x15,x15,1
+  3c:	0ff7f793          	andi	x15,x15,255
+  40:	fef40723          	sb	x15,-18(x8)
+  44:	fee44783          	lbu	x15,-18(x8)
+  48:	01879793          	slli	x15,x15,0x18
+  4c:	4187d793          	srai	x15,x15,0x18
+  50:	fc07d8e3          	bge	x15,x0,20 <main+0x20>
+  54:	fef44783          	lbu	x15,-17(x8)
+  58:	00079663          	bne	x15,x0,64 <main+0x64>
+  5c:	00100793          	addi	x15,x0,1
+  60:	0080006f          	jal	x0,68 <main+0x68>
+  64:	fef44783          	lbu	x15,-17(x8)
+  68:	00078513          	addi	x10,x15,0
+  6c:	01c12083          	lw	x1,28(x2)
+  70:	01812403          	lw	x8,24(x2)
+  74:	02010113          	addi	x2,x2,32
+  78:	00008067          	jalr	x0,0(x1)

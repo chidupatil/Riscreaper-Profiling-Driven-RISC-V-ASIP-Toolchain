@@ -1,0 +1,33 @@
+# Python virtual environment
+.venv/
+
+# Vivado junk
+*.bit
+*.bin
+*.jou
+*.log
+*.str
+*.pb
+*.dcp
+*.rpt
+*.html
+*.xml
+*.xpr
+*.xsa
+*.xpe
+*.xdc
+*.cache/
+*.runs/
+*.sim/
+*.hw/
+*.ip_user_files/
+.Xil/
+vivado/
+
+# Build artifacts
+generated/*.o
+generated/*.dump
+
+# Temporary files
+*.pyc
+__pycache__/

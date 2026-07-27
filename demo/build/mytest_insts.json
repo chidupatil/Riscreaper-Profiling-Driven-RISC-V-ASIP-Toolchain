@@ -1,0 +1,54 @@
+{
+  "instructions_used": [
+    "add",
+    "addi",
+    "andi",
+    "beq",
+    "bge",
+    "bgeu",
+    "blt",
+    "bltu",
+    "bne",
+    "jal",
+    "jalr",
+    "lw",
+    "or",
+    "slli",
+    "srli",
+    "sub",
+    "sw"
+  ],
+  "registers_read": [
+    1,
+    2,
+    5,
+    8,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "registers_written": [
+    1,
+    2,
+    5,
+    8,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "recommended_trim": {
+    "pc_width": 9,
+    "alu_width": 10,
+    "imm_width": 10,
+    "data_addr_width": 7,
+    "register_index_width": 4
+  },
+  "halted_reason": "pc_not_mapped",
+  "steps": 158
+}

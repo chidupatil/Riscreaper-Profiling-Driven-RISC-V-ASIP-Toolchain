@@ -1,0 +1,30 @@
+{
+  "recommended_trim": {
+    "pc_width": 7,
+    "alu_width": 32,
+    "imm_width": 7,
+    "data_addr_width": 32,
+    "register_index_width": 4
+  },
+  "redesigned_applied_trim": {
+    "pc_width": 7,
+    "data_width_non_address": 3,
+    "imm_width": 7,
+    "register_index_width": 4,
+    "address_registers_kept_32": [
+      2
+    ]
+  },
+  "patched_files": [
+    "generated/alu.v",
+    "generated/imm_gen.v",
+    "generated/register_file.v",
+    "generated/pipeline_top.v",
+    "generated/tb_pipeline_top.v"
+  ],
+  "notes": [
+    "Redesigned trim separates narrow data domain from address/stack domain.",
+    "x2 is kept 32-bit because it is the stack pointer and carries addresses.",
+    "Some pipeline/memory buses remain 32-bit to preserve address correctness."
+  ]
+}

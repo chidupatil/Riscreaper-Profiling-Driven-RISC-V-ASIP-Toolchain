@@ -1,0 +1,141 @@
+`timescale 1ns / 1ps
+
+module control_unit (
+    input      [6:0]  opcode,
+    input      [4:0]  rd,
+    output reg        branch,
+    output reg        mem_read,
+    output reg [1:0]  mem_to_reg,
+    output reg [1:0]  alu_op,
+    output reg        mem_write,
+    output reg        alu_src,
+    output reg        reg_write,
+    output reg        jump,
+    output reg        jalr
+);
+
+    reg reg_write_internal;
+
+    always @(*) begin
+        branch             = 1'b0;
+        mem_read           = 1'b0;
+        mem_to_reg         = 2'b00;
+        alu_op             = 2'b00;
+        mem_write          = 1'b0;
+        alu_src            = 1'b0;
+        reg_write_internal = 1'b0;
+        jump               = 1'b0;
+        jalr               = 1'b0;
+
+        case (opcode)
+
+{% if has_r_type %}
+            // R-type ALU ops: add, sub, and, or, xor, sll, srl, sra, slt, sltu
+            7'b0110011: begin
+                reg_write_internal = 1'b1;
+                alu_op             = 2'b10;
+                alu_src            = 1'b0;
+            end
+{% endif %}
+
+{% if has_i_alu %}
+            // I-type ALU/immediate ops: addi, andi, ori, xori, slti, ...
+            7'b0010011: begin
+                reg_write_internal = 1'b1;
+                alu_op             = 2'b10;
+                alu_src            = 1'b1;
+            end
+{% endif %}
+
+{% if has_load %}
+            // Loads: lw, lh, lb, lhu, lbu
+            7'b0000011: begin
+                reg_write_internal = 1'b1;
+                mem_read           = 1'b1;
+                alu_op             = 2'b00;
+                alu_src            = 1'b1;
+                mem_to_reg         = 2'b01;
+            end
+{% endif %}
+
+{% if has_store %}
+            // Stores: sw, sh, sb
+            7'b0100011: begin
+                mem_write          = 1'b1;
+                alu_op             = 2'b00;
+                alu_src            = 1'b1;
+            end
+{% endif %}
+
+{% if has_branch %}
+            // Branches: beq, bne, blt, bge, bltu, bgeu
+            7'b1100011: begin
+                branch             = 1'b1;
+                alu_op             = 2'b01;
+                alu_src            = 1'b0;
+            end
+{% endif %}
+
+{% if has_jal %}
+            // JAL
+            7'b1101111: begin
+                reg_write_internal = 1'b1;
+                jump               = 1'b1;
+                mem_to_reg         = 2'b10;
+                alu_src            = 1'b1;
+            end
+{% endif %}
+
+{% if has_jalr %}
+            // JALR
+            7'b1100111: begin
+                reg_write_internal = 1'b1;
+                jump               = 1'b1;
+                jalr               = 1'b1;
+                mem_to_reg         = 2'b10;
+                alu_src            = 1'b1;
+                alu_op             = 2'b00;
+            end
+{% endif %}
+
+{% if has_lui %}
+            // LUI
+            7'b0110111: begin
+                reg_write_internal = 1'b1;
+                alu_src            = 1'b1;
+                alu_op             = 2'b11;
+            end
+{% endif %}
+
+{% if has_auipc %}
+            // AUIPC
+            7'b0010111: begin
+                reg_write_internal = 1'b1;
+                alu_src            = 1'b1;
+                alu_op             = 2'b00;
+            end
+{% endif %}
+
+{% if has_custom %}
+            // Custom instructions (custom_mul/mulh/mulhu/mac/reserved,
+            // disambiguated by funct3 inside custom_unit.v, not here).
+            // Register operands -- alu_src stays at its default 0.
+            // Result flows through ex_result -> alu_result_wb
+            // regardless of alu_op (custom_en_ex selects
+            // custom_result_ex directly, bypassing the ALU entirely),
+            // and the default mem_to_reg=2'b00 ("alu" source) already
+            // picks that up correctly -- reg_write is the only signal
+            // this actually needs.
+            7'b0001011: begin
+                reg_write_internal = 1'b1;
+            end
+{% endif %}
+
+            default: begin
+            end
+        endcase
+
+        reg_write = (rd == 5'b00000) ? 1'b0 : reg_write_internal;
+    end
+
+endmodule

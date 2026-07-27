@@ -1,0 +1,82 @@
+// ============================================================
+// Module      : ALU
+// File        : alu.v
+// Description : Specialized RV32I ALU generated from the
+//               instructions used in the current program.
+//
+// Included operations:
+//{% for op in alu_ops %}
+//   - {{ op }}
+//{% endfor %}
+//
+// alu_control encoding:
+//   0000 → AND         0001 → OR
+//   0010 → ADD         0011 → XOR
+//   0100 → SLL         0101 → SRL
+//   0110 → SUB         0111 → SRA
+//   1000 → SLT         1001 → SLTU
+//   1010 → LUI (pass b)
+// ============================================================
+
+`timescale 1ns / 1ps
+
+module alu (
+    input      [31:0] a,
+    input      [31:0] b,
+    input      [3:0]  alu_control,
+    output reg [31:0] result,
+    output            zero,
+    output            negative,
+    output            overflow,
+    output            carry_out
+);
+
+    wire [32:0] sub_result = {1'b0, a} - {1'b0, b};
+
+    assign zero      = (result == 32'h0);
+    assign negative  = result[31];
+    assign overflow  = (a[31] ^ b[31]) & (a[31] ^ result[31]) &
+                       (alu_control == 4'b0110);
+    assign carry_out = sub_result[32];
+
+    always @(*) begin
+        case (alu_control)
+{% if "AND" in alu_ops %}
+            4'b0000: result = a & b;                          // AND
+{% endif %}
+{% if "OR" in alu_ops %}
+            4'b0001: result = a | b;                          // OR
+{% endif %}
+{% if "ADD" in alu_ops %}
+            4'b0010: result = a + b;                          // ADD
+{% endif %}
+{% if "XOR" in alu_ops %}
+            4'b0011: result = a ^ b;                          // XOR
+{% endif %}
+{% if "SLL" in alu_ops %}
+            4'b0100: result = a << b[4:0];                    // SLL
+{% endif %}
+{% if "SRL" in alu_ops %}
+            4'b0101: result = a >> b[4:0];                    // SRL
+{% endif %}
+{% if "SUB" in alu_ops %}
+            4'b0110: result = a - b;                          // SUB
+{% endif %}
+{% if "SRA" in alu_ops %}
+            4'b0111: result = $signed(a) >>> b[4:0];          // SRA
+{% endif %}
+{% if "SLT" in alu_ops %}
+            4'b1000: result = ($signed(a) < $signed(b))       // SLT
+                              ? 32'd1 : 32'd0;
+{% endif %}
+{% if "SLTU" in alu_ops %}
+            4'b1001: result = (a < b) ? 32'd1 : 32'd0;        // SLTU
+{% endif %}
+{% if "LUI" in alu_ops %}
+            4'b1010: result = b;                              // LUI
+{% endif %}
+            default: result = 32'h0;
+        endcase
+    end
+
+endmodule

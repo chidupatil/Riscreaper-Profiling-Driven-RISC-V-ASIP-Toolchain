@@ -1,0 +1,93 @@
+======================================================================
+TRIMMING SUMMARY
+======================================================================
+
+-- Program Counter --
+  32 bits -> 7 bits (25 bits saved, 78.1%)
+
+-- Instruction Memory --
+  128 words -> 15 words (113 words saved, 88.3%)
+
+-- Data Memory --
+  64 words -> 11 words (53 words saved, 82.8%)
+  per-word width: unchanged (32 bits) -- see note in JSON for why
+
+-- ALU --
+  port width: unchanged (32 bits, by design)
+  internal significant bits: 7 (25 bits saved, 78.1%)
+  alu_control width: 4 bits -> 1 bits (3 bits saved)
+
+-- Immediate --
+  port width: unchanged (32 bits, by design)
+  internal significant bits: 7 (25 bits saved, 78.1%)
+
+-- Register File --
+  32 architectural registers -> 5 physically stored (['x1', 'x2', 'x10', 'x14', 'x15'])
+  register index width: 5 bits -> 4 bits
+  per-register data widths: {'x1': 7, 'x2': 7, 'x10': 7, 'x14': 4, 'x15': 7}
+
+-- Pipeline Registers --
+  if_id_reg: 96 bits -> 46 bits (50 bits saved, 52.1%)
+      pc: 32 -> 7 bits [narrowed]
+      pc_plus4: 32 -> 7 bits [narrowed]
+      instruction: 32 -> 32 bits [fixed (full data width, by design)]
+  id_ex_reg: 221 bits -> 142 bits (79 bits saved, 35.7%)
+      pc: 32 -> 7 bits [narrowed]
+      pc_plus4: 32 -> 7 bits [narrowed]
+      read_data1: 32 -> 32 bits [fixed (full data width, by design)]
+      read_data2: 32 -> 32 bits [fixed (full data width, by design)]
+      imm: 32 -> 7 bits [narrowed]
+      instruction: 32 -> 32 bits [fixed (full data width, by design)]
+      rs1: 5 -> 4 bits [narrowed]
+      rs2: 5 -> 4 bits [narrowed]
+      rd: 5 -> 4 bits [narrowed]
+      alu_op: 2 -> 1 bits [narrowed]
+      alu_src: 1 -> 1 bits [fixed (full data width, by design)]
+      mem_read: 1 -> 1 bits [fixed (full data width, by design)]
+      mem_write: 1 -> 1 bits [fixed (full data width, by design)]
+      funct3: 3 -> 3 bits [fixed (full data width, by design)]
+      reg_write: 1 -> 1 bits [fixed (full data width, by design)]
+      mem_to_reg: 2 -> 2 bits [fixed (full data width, by design)]
+      branch: 1 -> 1 bits [fixed (full data width, by design)]
+      jump: 1 -> 1 bits [fixed (full data width, by design)]
+      jalr: 1 -> 1 bits [fixed (full data width, by design)]
+  ex_mem_reg: 144 bits -> 93 bits (51 bits saved, 35.4%)
+      pc_plus4: 32 -> 7 bits [narrowed]
+      alu_result: 32 -> 32 bits [fixed (full data width, by design)]
+      write_data: 32 -> 32 bits [fixed (full data width, by design)]
+      branch_target: 32 -> 7 bits [narrowed]
+      zero: 1 -> 1 bits [fixed (full data width, by design)]
+      branch_taken: 1 -> 1 bits [fixed (full data width, by design)]
+      rd: 5 -> 4 bits [narrowed]
+      mem_read: 1 -> 1 bits [fixed (full data width, by design)]
+      mem_write: 1 -> 1 bits [fixed (full data width, by design)]
+      funct3: 3 -> 3 bits [fixed (full data width, by design)]
+      reg_write: 1 -> 1 bits [fixed (full data width, by design)]
+      mem_to_reg: 2 -> 2 bits [fixed (full data width, by design)]
+      jump: 1 -> 1 bits [fixed (full data width, by design)]
+  mem_wb_reg: 104 bits -> 78 bits (26 bits saved, 25.0%)
+      pc_plus4: 32 -> 7 bits [narrowed]
+      alu_result: 32 -> 32 bits [fixed (full data width, by design)]
+      mem_read_data: 32 -> 32 bits [fixed (full data width, by design)]
+      rd: 5 -> 4 bits [narrowed]
+      reg_write: 1 -> 1 bits [fixed (full data width, by design)]
+      mem_to_reg: 2 -> 2 bits [fixed (full data width, by design)]
+
+-- Control Signal Encoding --
+  alu_op: 2 bits -> 1 bits
+  mem_to_reg: 2 bits -> 2 bits
+
+-- Instructions --
+  6 / 42 used (85.7% excluded)
+  used: addi, custom_mul, jal, jalr, lw, sw
+
+-- Custom Unit --
+  instantiated: True
+
+-- Branch Unit --
+  instantiated: False
+
+-- Hazard Unit --
+  instantiated: True
+
+======================================================================

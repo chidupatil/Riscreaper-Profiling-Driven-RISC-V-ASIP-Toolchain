@@ -1,0 +1,9 @@
+
+demo/build/second.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <main>:
+   0:	00900513          	addi	x10,x0,9
+   4:	00008067          	jalr	x0,0(x1)

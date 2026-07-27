@@ -1,0 +1,21 @@
+
+demo/build/dsp.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <main>:
+   0:	0001e7b7          	lui	x15,0x1e
+   4:	ff010113          	addi	x2,x2,-16
+   8:	24078793          	addi	x15,x15,576 # 1e240 <main+0x1e240>
+   c:	00f12223          	sw	x15,4(x2)
+  10:	000137b7          	lui	x15,0x13
+  14:	43e78793          	addi	x15,x15,1086 # 1343e <main+0x1343e>
+  18:	00f12423          	sw	x15,8(x2)
+  1c:	00412783          	lw	x15,4(x2)
+  20:	00812703          	lw	x14,8(x2)
+  24:	00e7878b          	.insn	4, 0x00e7878b
+  28:	00f12623          	sw	x15,12(x2)
+  2c:	00c12503          	lw	x10,12(x2)
+  30:	01010113          	addi	x2,x2,16
+  34:	00008067          	jalr	x0,0(x1)

@@ -1,0 +1,84 @@
+`timescale 1ns / 1ps
+
+module alu_control (
+    input      [1:0]  alu_op,
+    input      [2:0]  funct3,
+    input             funct7,
+    input             is_rtype,
+    output reg [3:0]  alu_control
+);
+
+    always @(*) begin
+        case (alu_op)
+            2'b00: alu_control = 4'b0010;
+
+{# BUG FIX (proven with Icarus Verilog simulation): the previous version of
+   this branch assigned a DIFFERENT alu_control code per branch funct3
+   (1011 for bne, 1100 for blt, 1101 for bge, 1110/1111 for bltu/bgeu).
+   alu.v's own case statement never implements any of those codes -- it
+   only goes up to 1010 (LUI) -- so they all silently fell through to
+   `default: result = 32'h0`. That made zero/negative/overflow come out as
+   constants regardless of the real operand values, so branch_unit.v (which
+   is correctly written to decide every branch from zero/negative/overflow/
+   carry_out based on funct3) ended up with BNE/BLT permanently not-taken
+   and BGE permanently taken. Simulated proof: BGE(5,3) and BGE(3,5) both
+   produced branch_taken=1; BNE(5,3) and BNE(5,5) both produced
+   branch_taken=0.
+
+   Fix: for EVERY branch type, alu_control must be SUB (4'b0110) --
+   branch_unit.v already derives the correct decision for every funct3 from
+   the flags a single a-b subtraction produces. There is no need for (and
+   no correct way to have) a different alu_control code per branch type. #}
+            2'b01: alu_control = 4'b0110;
+
+            2'b10: begin
+                case (funct3)
+{% if "add" in instructions or "addi" in instructions %}
+                    3'b000: begin
+                        if (is_rtype && funct7)
+                            alu_control = 4'b0110;
+                        else
+                            alu_control = 4'b0010;
+                    end
+{% endif %}
+{% if "and" in instructions or "andi" in instructions %}
+                    3'b111: alu_control = 4'b0000;
+{% endif %}
+{% if "or" in instructions or "ori" in instructions %}
+                    3'b110: alu_control = 4'b0001;
+{% endif %}
+{% if "xor" in instructions or "xori" in instructions %}
+                    3'b100: alu_control = 4'b0011;
+{% endif %}
+{% if "sll" in instructions or "slli" in instructions %}
+                    3'b001: alu_control = 4'b0100;
+{% endif %}
+{% if "srl" in instructions or "srli" in instructions or "sra" in instructions or "srai" in instructions %}
+                    3'b101: begin
+                        if (funct7)
+                            alu_control = 4'b0111;
+                        else
+                            alu_control = 4'b0101;
+                    end
+{% endif %}
+{% if "slt" in instructions or "slti" in instructions %}
+                    3'b010: alu_control = 4'b1000;
+{% endif %}
+{% if "sltu" in instructions or "sltiu" in instructions %}
+                    3'b011: alu_control = 4'b1001;
+{% endif %}
+                    default: alu_control = 4'b0010;
+                endcase
+            end
+
+{% if "lui" in instructions %}
+            2'b11: alu_control = 4'b1010;
+{% else %}
+            2'b11: alu_control = 4'b0010;
+{% endif %}
+
+            default: alu_control = 4'b0010;
+        endcase
+    end
+
+endmodule

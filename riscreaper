@@ -1,0 +1,466 @@
+#!/usr/bin/env python3
+"""
+riscreaper -- command-line entry point for the RISC-V ASIP trimming
+toolchain built across this project.
+
+This is deliberately a THIN ORCHESTRATOR, not a reimplementation.
+Every subcommand below just calls the existing, already-tested shell
+scripts in tools/ (c_to_mem.sh, build_from_c_with_trimming.sh,
+build_and_vivado_trimmed.sh, run_vivado.sh) and the trim summary
+generator (gen_trim_summary.py) -- none of the actual trimming logic
+lives here.
+
+Expected project layout (this file lives at the project root):
+    riscreaper
+    tools/
+        c_to_mem.sh
+        build_from_c_with_trimming.sh
+        build_and_vivado_trimmed.sh
+        run_vivado.sh
+        gen_trim_summary.py
+        riscv_harvard.ld
+        ...
+    demo/
+    generated/
+"""
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+
+REAPER_ART = r"""                                                                          
+"""
+
+WORDMARK_BANNER = r"""
+ ░░░░    ░░   ░░░░    ░░░░   ░░░░    ░░░░░    ░░░    ░░░░░   ░░░░░  ░░░░░  
+░█▒ ▒▓░  ▓▒  ▓▒░     ▓▒   ░  █▒ ░▓▒  ▓▓░░░   ░▓▒▓░   █▒ ░▓▓  █▒░░░  ▓▓░░▓▓ 
+░█▒░▒▒   ▓▒  ░▒▒▒▒  ▒█       ▓▒░▒▒   ▓▓▒░░   ▓▒ ▒▓   ▓▓░░▒▒  ▓▒░░░  ▒▓░▒▓░ 
+░█░ ░▓░  ▓▒  ░  ░▓▒  ▓▒░  ░  █▒ ░▓▒  ▓▓░░░  ▒▓░░░▓▒  █▒      █▒░░░  ▓▓  ▒▓░
+ ░    ░  ░   ░░░░░    ░░░░   ░    ░  ░░░░░  ░     ░  ░       ░░░░░  ░░   ░░
+---------------------------------------------------------------------------
+     a RISC-V ASIP trimming toolchain
+     profile once. narrow everything. reap the rest.
+---------------------------------------------------------------------------
+"""
+
+# ANSI color codes -- raw escape sequences, no external dependency
+# (rich/rich-click would work too, but add a real install requirement
+# for what's otherwise a stdlib-only tool). Bone/gray for the wordmark
+# and tagline, a single blood-red accent for the reaper figure.
+_COLOR_BONE = "\033[37m"
+_COLOR_ACCENT = "\033[31m"
+_COLOR_RESET = "\033[0m"
+
+
+def _supports_color() -> bool:
+    """Only color when actually writing to an interactive terminal --
+    never for redirected output, piped output, or CI logs, where raw
+    ANSI escape codes would just show up as garbled text."""
+    return sys.stdout.isatty()
+
+
+REAPER_SMALL = r"""
+      .--""--.
+     /  o  o  \  ,-'''
+    |    __    |'
+     \  '  `  /|
+      `------' |
+"""
+
+BANNER_RULE = "=" * 70
+
+VERSION = "0.2.0"
+
+ROOT = Path(__file__).resolve().parent
+TOOLS = ROOT / "tools"
+GENERATED = ROOT / "generated"
+DEMO = ROOT / "demo"
+
+C_TEMPLATE = '''// {name}.c
+//
+// A minimal RISCREAPER program. Edit this however you like, then run:
+//   ./riscreaper build demo/{name}.c
+//
+// CONSTRAINTS this toolchain expects:
+//  - No standard library (-nostdlib -nostartfiles): no printf, malloc,
+//    stdio.h, etc -- pure computation only.
+//  - main() must return a value. Whatever main() returns ends up in
+//    the a0/x10 register, which is exactly what RISCREAPER latches
+//    and reports as your program's final result (see `result_valid`
+//    / `result_data` in the generated hardware, or the "Return value"
+//    line in simulation output).
+//  - Base RV32I instructions are all supported. Four custom
+//    instructions are also available via inline asm -- see the
+//    commented-out example below.
+//  - Global/static variables, local variables, loops, branches, and
+//    nested function calls are all supported.
+
+int main(void) {{
+    volatile int a = 6;
+    volatile int b = 7;
+    volatile int result = a * b;
+    return result;
+}}
+
+/* ---- Example: using a custom instruction instead of '*' ----
+// Four custom R-type instructions are available under opcode 0x0B,
+// disambiguated by funct3: 0=custom_mul, 1=custom_mulh,
+// 2=custom_mulhu, 3=custom_mac. Uncomment and adapt as needed.
+
+static inline unsigned int custom_mul(unsigned int a, unsigned int b) {{
+    unsigned int result;
+    asm volatile (".insn r 0x0B, 0, 0, %0, %1, %2"
+                  : "=r"(result)
+                  : "r"(a), "r"(b));
+    return result;
+}}
+
+int main(void) {{
+    volatile unsigned int a = 6;
+    volatile unsigned int b = 7;
+    return custom_mul(a, b);
+}}
+*/
+'''
+
+
+def print_logo() -> None:
+    if _supports_color():
+        print(f"{_COLOR_ACCENT}{REAPER_ART}{_COLOR_RESET}")
+        print(f"{_COLOR_BONE}{WORDMARK_BANNER}{_COLOR_RESET}")
+    else:
+        print(REAPER_ART)
+        print(WORDMARK_BANNER)
+
+
+def section(title: str) -> None:
+    print(f"\n==[ {title} ]".ljust(70, "="))
+
+
+def run_script(script: Path, args: list[str]) -> int:
+    """Runs a tools/ script as a real subprocess, streaming its output
+    live (not captured/buffered) since these are long builds the user
+    wants to watch progress on -- exactly like running it directly."""
+    if not script.exists():
+        print(f"ERROR: expected script not found: {script}")
+        print("Is riscreaper sitting at the project root, next to tools/?")
+        return 1
+    cmd = ["bash", str(script), *args] if script.suffix == ".sh" else [sys.executable, str(script), *args]
+    result = subprocess.run(cmd, cwd=str(ROOT), check=False)
+    return result.returncode
+
+
+def cmd_new(args: argparse.Namespace) -> int:
+    """Scaffold a new C source file from a working template, so there's
+    always a known-good starting point instead of a blank file."""
+    name = args.name
+    if name.endswith(".c"):
+        name = name[:-2]
+    DEMO.mkdir(parents=True, exist_ok=True)
+    dest = DEMO / f"{name}.c"
+    if dest.exists() and not args.force:
+        print(f"ERROR: {dest} already exists. Use --force to overwrite, or pick a different name.")
+        return 1
+    dest.write_text(C_TEMPLATE.format(name=name), encoding="utf-8")
+    print(f">>> Created demo/{name}.c")
+    print(f"    Edit it, then run: ./riscreaper build demo/{name}.c")
+    return 0
+
+
+def cmd_mem(args: argparse.Namespace) -> int:
+    """Compile + extract instructions.mem/data.mem ONLY -- no profiling,
+    no trimming, no RTL generation. Wraps tools/c_to_mem.sh directly.
+    Useful for a fast compile-and-check-the-disassembly loop before
+    committing to a full trim/build cycle."""
+    script_args = [args.source]
+    if args.name:
+        script_args.append(args.name)
+    print(f">>> riscreaper mem: {args.source} (compile + .mem extraction only)")
+    rc = run_script(TOOLS / "c_to_mem.sh", script_args)
+    if rc == 0:
+        name = args.name or Path(args.source).stem
+        print(f">>> Done. See demo/build/{name}.elf, {name}.dis, {name}.mem, {name}_data.mem")
+        print("    Run 'riscreaper build' on the same source when you're ready for the full trim + RTL flow.")
+    return rc
+
+
+def cmd_build(args: argparse.Namespace) -> int:
+    """Compile + profile + trim: everything up to generated RTL, no Vivado.
+    Wraps tools/build_from_c_with_trimming.sh, then shows a summary of
+    what got trimmed."""
+    script_args = [args.source]
+    if args.opt_level:
+        # opt_level is the shell script's 4th positional arg -- if name
+        # or max_steps were skipped, they need explicit defaults filled
+        # in here so the positional order stays correct.
+        script_args.append(args.name or Path(args.source).stem)
+        script_args.append(str(args.max_steps or 20000))
+        script_args.append(args.opt_level)
+    else:
+        if args.name:
+            script_args.append(args.name)
+        if args.max_steps:
+            script_args.append(str(args.max_steps))
+    print(f">>> riscreaper build: {args.source}")
+    rc = run_script(TOOLS / "build_from_c_with_trimming.sh", script_args)
+    if rc != 0:
+        return rc
+    section("TRIM SUMMARY")
+    cmd_summary(args)
+    print(f"\n>>> Build complete. RTL is in generated/.")
+    print("    Run 'riscreaper bitstream' on the same source to also run Vivado.")
+    return 0
+
+
+def cmd_bitstream(args: argparse.Namespace) -> int:
+    """Full flow: build + trim + Vivado synthesis/implementation/bitstream.
+    Wraps tools/build_and_vivado_trimmed.sh."""
+    script_args = [args.source]
+    if args.opt_level:
+        script_args.append(args.name or Path(args.source).stem)
+        script_args.append(str(args.max_steps or 20000))
+        script_args.append(args.opt_level)
+    else:
+        if args.name:
+            script_args.append(args.name)
+        if args.max_steps:
+            script_args.append(str(args.max_steps))
+    print(f">>> riscreaper bitstream: {args.source}")
+    return run_script(TOOLS / "build_and_vivado_trimmed.sh", script_args)
+
+
+def cmd_vivado(args: argparse.Namespace) -> int:
+    """Just (re)run Vivado on whatever's already in generated/, without
+    regenerating/re-trimming anything first. Wraps tools/run_vivado.sh."""
+    print(">>> riscreaper vivado: running Vivado on the current generated/ contents")
+    return run_script(TOOLS / "run_vivado.sh", [])
+
+
+def cmd_summary(args: argparse.Namespace) -> int:
+    """Show what got trimmed for the most recent build. Regenerates the
+    summary first if the underlying profile/insts files are present but
+    trim_summary.txt/json aren't, so this always reflects the current
+    generated/ contents rather than a stale summary from an earlier run."""
+    bit_profile_candidates = sorted(DEMO.glob("build/*_bit_profile.json")) if (DEMO / "build").exists() else []
+    insts_candidates = sorted(DEMO.glob("build/*_insts.json")) if (DEMO / "build").exists() else []
+
+    summary_txt = GENERATED / "trim_summary.txt"
+    if not summary_txt.exists() and bit_profile_candidates and insts_candidates:
+        rc = run_script(
+            TOOLS / "gen_trim_summary.py",
+            [str(bit_profile_candidates[-1]), str(insts_candidates[-1]), str(GENERATED)],
+        )
+        if rc != 0:
+            return rc
+
+    if not summary_txt.exists():
+        print("No trim summary found, and nothing to generate one from.")
+        print("Run 'riscreaper build <source.c>' first.")
+        return 1
+
+    print(summary_txt.read_text(encoding="utf-8"))
+    return 0
+
+
+def cmd_clean(args: argparse.Namespace) -> int:
+    """Clear generated/ for a fresh build. Asks for confirmation unless
+    --yes is passed, since this deletes real build output."""
+    if not GENERATED.exists():
+        print("generated/ doesn't exist -- nothing to clean.")
+        return 0
+
+    contents = list(GENERATED.iterdir())
+    if not contents:
+        print("generated/ is already empty.")
+        return 0
+
+    if not getattr(args, "quiet", False):
+        print(REAPER_SMALL)
+    print(f"This will delete {len(contents)} item(s) inside {GENERATED}:")
+    for item in contents[:10]:
+        print(f"  {item.name}")
+    if len(contents) > 10:
+        print(f"  ... and {len(contents) - 10} more")
+
+    if not args.yes:
+        confirm = input("Proceed? [y/N] ").strip().lower()
+        if confirm != "y":
+            print("Cancelled.")
+            return 1
+
+    import shutil
+    for item in contents:
+        if item.is_dir():
+            shutil.rmtree(item)
+        else:
+            item.unlink()
+    print("generated/ cleared.")
+    return 0
+
+
+WORKFLOW_HELP = """
+TYPICAL WORKFLOW
+
+  1. riscreaper new mytest              Scaffold demo/mytest.c from a working template
+  2. riscreaper mem demo/mytest.c       (optional) Quick compile + check the disassembly
+  3. riscreaper build demo/mytest.c     Compile, profile, trim -> RTL + a trim summary
+  4. riscreaper bitstream demo/mytest.c Same as above, then synthesize + implement + bitstream
+  5. riscreaper summary                 Re-show what got trimmed, any time after a build
+
+Every step after `new` also has a leaner counterpart if you already
+know what you want:
+  - `mem`       just the compile + .mem files, nothing else
+  - `build`     compile + trim + RTL, no Vivado
+  - `bitstream` the full pipeline, ending in a real .bit file
+  - `vivado`    re-run Vivado only, on whatever's already in generated/
+                (e.g. after hand-editing a generated .v file)
+
+Run `riscreaper <command> --help` for details and options on any
+specific command.
+"""
+
+
+def build_parser() -> argparse.ArgumentParser:
+    # Shared parent for --quiet, so it works both before AND after any
+    # subcommand name (`riscreaper --quiet clean` and `riscreaper clean
+    # --quiet` both work) -- argparse doesn't inherit a parent parser's
+    # own arguments into subparsers automatically, this is the standard
+    # pattern for that.
+    quiet_parent = argparse.ArgumentParser(add_help=False)
+    quiet_parent.add_argument("--quiet", action="store_true", default=argparse.SUPPRESS,
+                               help="Suppress the banner. Useful in scripts and CI.")
+
+    parser = argparse.ArgumentParser(
+        prog="riscreaper",
+        description="RISC-V ASIP trimming toolchain -- profile a C program, "
+                    "then narrow the processor down to exactly what it needs.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=WORKFLOW_HELP,
+        parents=[quiet_parent],
+    )
+    parser.add_argument("--version", action="store_true", help="Show version and exit.")
+
+    sub = parser.add_subparsers(dest="command")
+
+    p_new = sub.add_parser(
+        "new", help="Scaffold a new C source file from a working template.",
+        parents=[quiet_parent],
+        description="Creates demo/<name>.c from a minimal, known-good template "
+                    "(a plain multiply, plus a commented-out custom-instruction "
+                    "version) -- a working starting point instead of a blank file, "
+                    "so you're editing something that already builds rather than "
+                    "starting from scratch.",
+    )
+    p_new.add_argument("name", help="Program name, e.g. 'mytest' -> demo/mytest.c")
+    p_new.add_argument("--force", action="store_true", help="Overwrite if the file already exists.")
+    p_new.set_defaults(func=cmd_new)
+
+    p_mem = sub.add_parser(
+        "mem", help="Compile + extract .mem files only -- no trimming, no RTL.",
+        parents=[quiet_parent],
+        description="Runs just the compile-and-extract step (tools/c_to_mem.sh): "
+                    "your C source -> ELF -> disassembly -> instructions.mem/data.mem. "
+                    "Skips profiling, trimming, and RTL generation entirely. Useful "
+                    "for a fast iteration loop -- check the .dis file compiled the "
+                    "way you expect -- before committing to a full 'build', which "
+                    "runs the emulator twice and generates a full RTL pipeline.",
+    )
+    p_mem.add_argument("source", help="Path to the C source file, e.g. demo/mytest.c")
+    p_mem.add_argument("name", nargs="?", default=None, help="Program name (default: derived from source filename)")
+    p_mem.set_defaults(func=cmd_mem)
+
+    p_build = sub.add_parser(
+        "build", help="Compile, profile, and trim a C program into RTL (no Vivado).",
+        parents=[quiet_parent],
+        description="The full trim pipeline: compile, run the emulator to profile "
+                    "actual usage (which registers, which instructions, what bit "
+                    "widths are really needed), generate a specialized RTL pipeline "
+                    "matching exactly that, and print a summary of everything that "
+                    "got trimmed and by how much. Does not touch Vivado -- use "
+                    "'bitstream' for that once you're happy with this.",
+    )
+    p_build.add_argument("source", help="Path to the C source file, e.g. demo/mytest.c")
+    p_build.add_argument("name", nargs="?", default=None, help="Program name (default: derived from source filename)")
+    p_build.add_argument("max_steps", nargs="?", type=int, default=None, help="Emulator step limit (default: 20000)")
+    p_build.add_argument("--opt-level", default=None, metavar="LEVEL",
+                          help="GCC optimization level, e.g. -O0 (default), -O1, -O2, -O3, -Os. "
+                               "Higher levels typically cut instruction count substantially "
+                               "(real register allocation, honors 'static inline'), but can "
+                               "exercise instruction patterns -O0 never did -- re-verify "
+                               "correctness on anything built above -O0.")
+    p_build.set_defaults(func=cmd_build)
+
+    p_bit = sub.add_parser(
+        "bitstream", help="Full flow: build + trim + Vivado synthesis/implementation/bitstream.",
+        parents=[quiet_parent],
+        description="Everything 'build' does, then hands the generated RTL to Vivado: "
+                    "synthesis, implementation, and bitstream generation, ending in a "
+                    "real .bit file ready to flash to a Basys3 (or compatible) board.",
+    )
+    p_bit.add_argument("source", help="Path to the C source file")
+    p_bit.add_argument("name", nargs="?", default=None)
+    p_bit.add_argument("max_steps", nargs="?", type=int, default=None)
+    p_bit.add_argument("--opt-level", default=None, metavar="LEVEL",
+                        help="GCC optimization level, e.g. -O0 (default), -O1, -O2, -O3, -Os.")
+    p_bit.set_defaults(func=cmd_bitstream)
+
+    p_viv = sub.add_parser(
+        "vivado", help="Just (re)run Vivado on the current generated/ contents.",
+        parents=[quiet_parent],
+        description="Re-runs Vivado without touching the RTL first -- for when "
+                    "you've hand-edited a generated .v file, or a previous Vivado "
+                    "run failed for a Vivado-side reason (e.g. a timing or "
+                    "placement issue) and you just want to retry the same design.",
+    )
+    p_viv.set_defaults(func=cmd_vivado)
+
+    p_sum = sub.add_parser(
+        "summary", help="Show what got trimmed for the most recent build.",
+        parents=[quiet_parent],
+        description="Prints the trim summary: PC/ALU/immediate/register-index "
+                    "widths before and after, which instructions and registers "
+                    "actually got used, per-pipeline-register bit savings, and "
+                    "whether branch_unit/hazard_unit/custom_unit ended up "
+                    "instantiated at all. Regenerates it from the last build's "
+                    "profile data if it's missing.",
+    )
+    p_sum.set_defaults(func=cmd_summary)
+
+    p_clean = sub.add_parser(
+        "clean", help="Clear generated/ for a fresh build.",
+        parents=[quiet_parent],
+        description="Deletes everything in generated/ -- asks for confirmation "
+                    "first unless --yes is passed.",
+    )
+    p_clean.add_argument("--yes", action="store_true", help="Skip the confirmation prompt.")
+    p_clean.set_defaults(func=cmd_clean)
+
+    return parser
+
+
+def main(argv=None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    if args.version:
+        if not getattr(args, "quiet", False):
+            print_logo()
+        print(f"riscreaper {VERSION}")
+        return 0
+
+    if not args.command:
+        if not getattr(args, "quiet", False):
+            print_logo()
+        print(parser.format_usage().rstrip())
+        print(parser.description)
+        print()
+        print("Run './riscreaper --help' for the full command list and workflow guide.")
+        return 0
+
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
