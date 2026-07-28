@@ -1,9 +1,0 @@
-{
-  "used_instructions": [
-    "addi",
-    "sw",
-    "lw",
-    "add",
-    "jal"
-  ]
-}
