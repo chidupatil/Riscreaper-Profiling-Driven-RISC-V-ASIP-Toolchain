@@ -188,16 +188,6 @@ demo/                          # your C source programs
 generated/                    # build output (gitignored, fully regeneratable)
 ```
 
-## Board setup (Basys3)
-
-| Signal | Pin | Notes |
-|---|---|---|
-| `clk` | W5 | 100MHz onboard oscillator, design runs at 50MHz via constraint |
-| `reset` | U18 (btnC) | Active-high, async |
-| `halted` | LED0 (U16) | |
-| `result_valid` | LED1 (E19) | |
-| `result_data[0..13]` | LEDs 2-15 | Capped to 14 bits, the remaining onboard LED budget after `halted`/`result_valid` |
-
 ## Notes on the architecture
 
 - **Harvard architecture**: instruction and data memory are separate,
