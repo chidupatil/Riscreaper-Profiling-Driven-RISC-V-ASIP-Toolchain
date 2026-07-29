@@ -92,30 +92,47 @@ static inline unsigned int custom_mul(unsigned int a, unsigned int b) {
 
 ## Measured results
 
-These are real, verified numbers from this project, not projections:
+The mechanisms above aren't just theoretical. Each one has been verified
+against real hardware synthesis and real simulation runs:
 
-- **`custom_unit` DSP usage**: an earlier version ran two independent
-  multipliers (signed + unsigned) unconditionally, costing ~7 DSP48
-  slices regardless of which operation a program used. Trimmed to
-  include only the multiplier actually needed (down to ~3 DSP slices),
-  then narrowed operand/result width to profiled actual values: a
-  program calling `custom_mul(6, 7)` needs 0 DSP slices, confirmed via a
-  real Vivado timing report showing the multiply synthesizing entirely
-  in LUTs with 11ns+ of slack.
-- **Cycle count vs. compiler optimization level**: the same bubble-sort
-  test program, compiled at `-O0` vs `-O2`: **11,664 cycles down to
-  3,238 cycles**, a 72% reduction, identical correct output both times.
-- **Data memory word width**: same bubble-sort program, per-word storage
-  narrowed from 32 bits to 15 bits (53% reduction), verified with a full
-  compile-through-simulation run, same correct final answer.
+- **Custom instruction hardware costs resources proportional to what a
+  program actually uses, not a fixed worst-case allocation.** DSP48
+  slices for `custom_unit`'s multiplier(s) scale with the profiled
+  operand and result widths, not a blanket 32 bits. Confirmed case: a
+  program using a single, narrow-operand custom multiply went from
+  needing two unconditional multipliers (~7 DSP slices) down to zero DSP
+  slices at all, with the same operation synthesizing entirely in LUTs
+  and 11ns+ of timing slack to spare in a real Vivado timing report.
+- **Compiler optimization level is configurable end to end, and directly
+  trades cycle count against debuggability.** `-O0` spends real cycles
+  on spill/reload traffic that exists purely to make debugging
+  predictable; higher optimization levels eliminate most of it while
+  producing identical output. Confirmed case: the same test program
+  dropped from 11,664 cycles to 3,238 cycles going from `-O0` to `-O2`,
+  a 72% reduction, same correct answer both times.
+- **Data memory's per-word storage narrows to whatever value range a
+  program actually needs, whenever that's provably safe** (no
+  byte/halfword access anywhere in the program). Confirmed case: a
+  program's data memory narrowed from 32 bits to 15 bits per word, a 53%
+  reduction, verified through a full compile-through-simulation run with
+  the same correct final answer.
+
+Exact numbers vary by program, since every trim decision is driven by
+that specific program's profile, not a fixed target. The cases above are
+real, reproducible runs, not projections.
 
 ## Requirements
 
 - `riscv32-unknown-elf-gcc` (or equivalent RV32I bare-metal cross-compiler
   with `nm`/`objdump`/`objcopy`)
 - Python 3
-- Icarus Verilog (`iverilog`/`vvp`) for RTL simulation
-- Xilinx Vivado 2025.2+ (only required for `bitstream`/`vivado` commands)
+- Xilinx Vivado 2025.2+ for synthesis, implementation, and simulation
+  (Vivado's own simulator, XSim, handles both RTL and post-synthesis
+  simulation; `bitstream`/`vivado` commands drive the full flow through
+  Vivado directly)
+- Icarus Verilog (`iverilog`/`vvp`) is an optional alternative for
+  quick RTL simulation without launching Vivado, not required if you're
+  running everything through Vivado
 
 ## Quick start
 
