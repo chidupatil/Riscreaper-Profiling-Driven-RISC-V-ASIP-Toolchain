@@ -194,12 +194,3 @@ generated/                    # build output (gitignored — fully regeneratable
   (`clk`/`reset`/`halted`/`result_valid`/`result_data`) for synthesis,
   separate from the full internal-signal debug testbench used for
   RTL/behavioral simulation.
-
-## Known limitations / open work
-
-- Loop unrolling (the compiler-side path to reducing branch overhead) has
-  not been attempted.
-- Not every test program in this project's history has been verified
-  against a real cross-compiler — some verification was done via manual
-  reconstruction from real disassembly output where compiler access
-  wasn't available at the time.
